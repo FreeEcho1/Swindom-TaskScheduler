@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SwindomTaskScheduler</name>
+    </assembly>
+    <members>
+        <member name="T:SwindomTaskScheduler.Common">
+            <summary>
+            共通データ
+            </summary>
+        </member>
+        <member name="F:SwindomTaskScheduler.Common.CreateTask">
+            <summary>
+            タスク作成の文字列
+            </summary>
+        </member>
+        <member name="F:SwindomTaskScheduler.Common.DeleteTask">
+            <summary>
+            タスク削除の文字列
+            </summary>
+        </member>
+        <member name="F:SwindomTaskScheduler.Common.CheckRegistered">
+            <summary>
+            タスクが登録されているか確認の文字列
+            </summary>
+        </member>
+        <member name="F:SwindomTaskScheduler.Common.TaskSchedulerFolderName">
+            <summary>
+            タスクスケジューラーのフォルダ名
+            </summary>
+        </member>
+        <member name="F:SwindomTaskScheduler.Common.RegistrationInformationAuthor">
+            <summary>
+            登録情報の「Author」
+            </summary>
+        </member>
+        <member name="F:SwindomTaskScheduler.Common.ApplicationFileNameToRegister">
+            <summary>
+            登録するアプリケーションのファイル名
+            </summary>
+        </member>
+        <member name="T:SwindomTaskScheduler.TaskSchedulerProcessing">
+            <summary>
+            タスクスケジューラーの処理
+            </summary>
+        </member>
+        <member name="M:SwindomTaskScheduler.TaskSchedulerProcessing.CreateTask">
+            <summary>
+            タスクを作成
+            </summary>
+        </member>
+        <member name="M:SwindomTaskScheduler.TaskSchedulerProcessing.DeleteTask">
+            <summary>
+            タスクを削除
+            </summary>
+        </member>
+        <member name="M:SwindomTaskScheduler.TaskSchedulerProcessing.CheckRegistered">
+            <summary>
+            タスクが登録されているか確認
+            </summary>
+            <returns>登録されているかの値 (登録されてない「false」/登録されてる「true」)</returns>
+        </member>
+    </members>
+</doc>
