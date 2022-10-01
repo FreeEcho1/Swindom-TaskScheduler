@@ -1,150 +1,139 @@
-﻿namespace SwindomTaskScheduler
+﻿namespace SwindomTaskScheduler;
+
+/// <summary>
+/// タスクスケジューラーの処理
+/// </summary>
+public static class TaskSchedulerProcessing
 {
     /// <summary>
-    /// タスクスケジューラーの処理
+    /// タスクを作成
     /// </summary>
-    public static class TaskSchedulerProcessing
+    public static void CreateTask()
     {
-        /// <summary>
-        /// タスクを作成
-        /// </summary>
-        public static void CreateTask()
-        {
-            TaskScheduler.ITaskService taskService = null;
+        TaskScheduler.ITaskService? taskService = null;
 
+        try
+        {
+            taskService = new TaskScheduler.TaskScheduler();
+            taskService.Connect(null, null, null, null);
+
+            TaskScheduler.ITaskDefinition taskDefinition = taskService.NewTask(0);
+
+            // 全般
+            TaskScheduler.IRegistrationInfo registrationInfo = taskDefinition.RegistrationInfo;
+            registrationInfo.Author = Common.RegistrationInformationAuthor;
+            TaskScheduler.IPrincipal principal = taskDefinition.Principal;
+            principal.LogonType = TaskScheduler._TASK_LOGON_TYPE.TASK_LOGON_INTERACTIVE_TOKEN;
+            principal.RunLevel = TaskScheduler._TASK_RUNLEVEL.TASK_RUNLEVEL_HIGHEST;
+
+            // トリガー
+            TaskScheduler.ITriggerCollection triggerCollection = taskDefinition.Triggers;
+            TaskScheduler.ILogonTrigger logonTrigger = (TaskScheduler.ILogonTrigger)triggerCollection.Create(TaskScheduler._TASK_TRIGGER_TYPE2.TASK_TRIGGER_LOGON);
+
+            // 操作
+            TaskScheduler.IActionCollection actionCollection = taskDefinition.Actions;
+            TaskScheduler.IExecAction execAction = (TaskScheduler.IExecAction)actionCollection.Create(TaskScheduler._TASK_ACTION_TYPE.TASK_ACTION_EXEC);
+            execAction.Path = Path.GetDirectoryName(Path.GetFullPath(System.Environment.GetCommandLineArgs()[0])) + Path.DirectorySeparatorChar + Common.ApplicationFileNameToRegister;
+
+            // 条件
+            TaskScheduler.ITaskSettings taskSettings = taskDefinition.Settings;
+            taskSettings.DisallowStartIfOnBatteries = false;
+            taskSettings.StopIfGoingOnBatteries = false;
+
+            // 設定
+            taskSettings.ExecutionTimeLimit = "P0D";
+
+            TaskScheduler.ITaskFolder rootFolder = taskService.GetFolder(Path.DirectorySeparatorChar.ToString());
             try
             {
-                taskService = new TaskScheduler.TaskScheduler();
-                taskService.Connect(null, null, null, null);
+                rootFolder.RegisterTaskDefinition(Common.TaskSchedulerFolderName, taskDefinition, (int)TaskScheduler._TASK_CREATION.TASK_CREATE_OR_UPDATE, null, null, TaskScheduler._TASK_LOGON_TYPE.TASK_LOGON_NONE, null);
+            }
+            finally
+            {
+                _ = System.Runtime.InteropServices.Marshal.ReleaseComObject(rootFolder);
+            }
+        }
+        finally
+        {
+            if (taskService != null)
+            {
+                _ = System.Runtime.InteropServices.Marshal.ReleaseComObject(taskService);
+            }
+        }
+    }
 
-                TaskScheduler.ITaskDefinition taskDefinition = taskService.NewTask(0);
+    /// <summary>
+    /// タスクを削除
+    /// </summary>
+    public static void DeleteTask()
+    {
+        TaskScheduler.ITaskService? taskService = null;
 
-                // 全般
-                TaskScheduler.IRegistrationInfo registrationInfo = taskDefinition.RegistrationInfo;
-                registrationInfo.Author = Common.RegistrationInformationAuthor;
-                TaskScheduler.IPrincipal principal = taskDefinition.Principal;
-                principal.LogonType = TaskScheduler._TASK_LOGON_TYPE.TASK_LOGON_INTERACTIVE_TOKEN;
-                principal.RunLevel = TaskScheduler._TASK_RUNLEVEL.TASK_RUNLEVEL_HIGHEST;
+        try
+        {
+            taskService = new TaskScheduler.TaskScheduler();
+            taskService.Connect(null, null, null, null);
 
-                // トリガー
-                TaskScheduler.ITriggerCollection triggerCollection = taskDefinition.Triggers;
-                TaskScheduler.ILogonTrigger logonTrigger = (TaskScheduler.ILogonTrigger)triggerCollection.Create(TaskScheduler._TASK_TRIGGER_TYPE2.TASK_TRIGGER_LOGON);
+            TaskScheduler.ITaskFolder rootFolder = taskService.GetFolder(Path.DirectorySeparatorChar.ToString());
+            try
+            {
+                rootFolder.DeleteTask(Common.TaskSchedulerFolderName, 0);
+            }
+            finally
+            {
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(rootFolder);
+            }
+        }
+        finally
+        {
+            if (taskService != null)
+            {
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(taskService);
+            }
+        }
+    }
 
-                // 操作
-                TaskScheduler.IActionCollection actionCollection = taskDefinition.Actions;
-                TaskScheduler.IExecAction execAction = (TaskScheduler.IExecAction)actionCollection.Create(TaskScheduler._TASK_ACTION_TYPE.TASK_ACTION_EXEC);
-                execAction.Path = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(System.Environment.GetCommandLineArgs()[0])) + System.IO.Path.DirectorySeparatorChar + Common.ApplicationFileNameToRegister;
+    /// <summary>
+    /// タスクが登録されているか確認
+    /// </summary>
+    /// <returns>登録されているかの値 (登録されてない「false」/登録されてる「true」)</returns>
+    public static bool CheckRegistered()
+    {
+        bool result = false;        // 結果
+        TaskScheduler.ITaskService? taskService = null;
 
-                // 条件
-                TaskScheduler.ITaskSettings taskSettings = taskDefinition.Settings;
-                taskSettings.DisallowStartIfOnBatteries = false;
-                taskSettings.StopIfGoingOnBatteries = false;
+        try
+        {
+            taskService = new TaskScheduler.TaskScheduler();
+            taskService.Connect(null, null, null, null);
 
-                // 設定
-                taskSettings.ExecutionTimeLimit = "P0D";
+            TaskScheduler.ITaskFolder rootFolder = taskService.GetFolder(Path.DirectorySeparatorChar.ToString());
+            try
+            {
+                TaskScheduler.IRegisteredTaskCollection taskFolderCollection = rootFolder.GetTasks(0);
 
-                TaskScheduler.ITaskFolder rootFolder = taskService.GetFolder(System.IO.Path.DirectorySeparatorChar.ToString());
-                try
+                foreach (TaskScheduler.IRegisteredTask nowTaskFolder in taskFolderCollection)
                 {
-                    rootFolder.RegisterTaskDefinition(Common.TaskSchedulerFolderName, taskDefinition, (int)TaskScheduler._TASK_CREATION.TASK_CREATE_OR_UPDATE, null, null, TaskScheduler._TASK_LOGON_TYPE.TASK_LOGON_NONE, null);
-                }
-                finally
-                {
-                    if (rootFolder != null)
+                    if (nowTaskFolder.Name == Common.TaskSchedulerFolderName)
                     {
-                        System.Runtime.InteropServices.Marshal.ReleaseComObject(rootFolder);
+                        result = true;
+                        break;
                     }
                 }
             }
             finally
             {
-                if (taskService != null)
-                {
-                    System.Runtime.InteropServices.Marshal.ReleaseComObject(taskService);
-                }
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(rootFolder);
             }
         }
-
-        /// <summary>
-        /// タスクを削除
-        /// </summary>
-        public static void DeleteTask()
+        finally
         {
-            TaskScheduler.ITaskService taskService = null;
-
-            try
+            if (taskService != null)
             {
-                taskService = new TaskScheduler.TaskScheduler();
-                taskService.Connect(null, null, null, null);
-
-                TaskScheduler.ITaskFolder rootFolder = taskService.GetFolder(System.IO.Path.DirectorySeparatorChar.ToString());
-                try
-                {
-                    rootFolder.DeleteTask(Common.TaskSchedulerFolderName, 0);
-                }
-                finally
-                {
-                    if (rootFolder != null)
-                    {
-                        System.Runtime.InteropServices.Marshal.ReleaseComObject(rootFolder);
-                    }
-                }
-            }
-            finally
-            {
-                if (taskService != null)
-                {
-                    System.Runtime.InteropServices.Marshal.ReleaseComObject(taskService);
-                }
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(taskService);
             }
         }
 
-        /// <summary>
-        /// タスクが登録されているか確認
-        /// </summary>
-        /// <returns>登録されているかの値 (登録されてない「false」/登録されてる「true」)</returns>
-        public static bool CheckRegistered()
-        {
-            bool result = false;        // 結果
-            TaskScheduler.ITaskService taskService = null;
-
-            try
-            {
-                taskService = new TaskScheduler.TaskScheduler();
-                taskService.Connect(null, null, null, null);
-                TaskScheduler.ITaskFolder rootFolder = null;
-
-                try
-                {
-                    rootFolder = taskService.GetFolder(System.IO.Path.DirectorySeparatorChar.ToString());
-                    TaskScheduler.IRegisteredTaskCollection taskFolderCollection = rootFolder.GetTasks(0);
-
-                    foreach (TaskScheduler.IRegisteredTask nowTaskFolder in taskFolderCollection)
-                    {
-                        if (nowTaskFolder.Name == Common.TaskSchedulerFolderName)
-                        {
-                            result = true;
-                            break;
-                        }
-                    }
-                }
-                finally
-                {
-                    if (rootFolder != null)
-                    {
-                        System.Runtime.InteropServices.Marshal.ReleaseComObject(rootFolder);
-                    }
-                }
-            }
-            finally
-            {
-                if (taskService != null)
-                {
-                    System.Runtime.InteropServices.Marshal.ReleaseComObject(taskService);
-                }
-            }
-
-            return (result);
-        }
+        return (result);
     }
 }
